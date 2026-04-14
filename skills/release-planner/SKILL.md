@@ -1,6 +1,11 @@
 ---
 name: release-planner
-description: This skill should be used when the user asks to "帮我生成排期", "做一个甘特图", "出一下排期", "生成 v{x.x.x} 排期", "生成开发排期", or provides version number, team members, timeline, and start date information for sprint planning. Generates two files: a structured schedule document (开发排期甘特图.md) and an interactive Gantt chart (开发排期甘特图.html).
+description: >-
+  This skill should be used when the user asks to "帮我生成排期", "做一个甘特图",
+  "出一下排期", "生成 v{x.x.x} 排期", "生成开发排期", or provides version number,
+  team members, timeline, and start date information for sprint planning.
+  Generates two files: a structured schedule document (开发排期甘特图.md) and
+  an interactive Gantt chart (开发排期甘特图.html).
 license: MIT
 metadata:
   author: mingzaily
