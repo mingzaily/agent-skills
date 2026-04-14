@@ -10,7 +10,8 @@ Date calculation rules, standard phase durations, and leave handling for release
 
 - **Skip weekends**: `dow === 0` (Sun) or `dow === 6` (Sat) are never counted as workdays
 - **Skip statutory holidays**: Days marked `holiday: true` in the DAYS array
-- **Count substitute workdays**: Weekend makeup days are treated as normal workdays
+- **Count substitute workdays**: Weekend makeup days (`workday: true`) are treated as normal workdays
+- **Count voluntary overtime days**: Weekend days where the team explicitly works overtime (`workday: true`) are also treated as normal workdays — same DAYS flag, different context
 
 ### Counting N Workdays
 
@@ -56,7 +57,7 @@ Date calculation rules, standard phase durations, and leave handling for release
 | 测试环境测试 | Next workday after 联调② ends |
 | 预生产测试 | Next workday after 测试环境 ends |
 | 产品回归 | Same day as 预生产测试 |
-| 版本发布 | Next **Monday** after 预生产/回归 ends; skip if that Monday is a holiday |
+| 版本发布 | Confirmed by user; any workday after 预生产/回归 ends |
 
 ---
 
@@ -83,12 +84,20 @@ Date calculation rules, standard phase durations, and leave handling for release
 - All bars automatically bridge over holidays with a dashed line
 - The renderer does not count holidays as workdays when calculating bar segments
 
-### Substitute Workday (补班)
+### Substitute Workday / 补班 (government-mandated makeup day)
 
-- The makeup day falls on a weekend (e.g., Saturday)
-- In DAYS, keep the correct `dow` (e.g., `6` for Saturday) and set `holiday: false`
-- The renderer treats it as a normal workday because `isOff = dow===0 || dow===6 || holiday`
-- **Note**: Since `dow===6` → `isOff` returns true, substitute Saturdays are still treated as off by the default renderer. Only substitute workdays that fall on a **Sunday** (dow=0) have the same issue. For a makeup day on an actual weekday (Mon–Fri, dow 1–5), it works correctly with `holiday: false`.
+- Occurs when a statutory holiday causes a long break; the government designates a nearby weekend as a mandatory workday to compensate
+- In DAYS: keep the correct `dow`, set `holiday: false`, and add `workday: true`
+- The renderer uses `isOff = (dow===0 || dow===6 || holiday) && !workday`, so `workday: true` correctly overrides the weekend check
+- The day renders with a yellow `.workday-makeup` background
+- **Pairing rule**: when adding a statutory holiday block, check whether a government-announced substitute workday exists for that holiday and add it to DAYS as well
+
+### Voluntary Overtime Day / 主动加班 (team-agreed weekend work)
+
+- Occurs when the team decides to work on a weekend to meet a deadline (e.g., QA overtime during test phase)
+- In DAYS: same treatment as substitute workday — keep the correct `dow`, set `holiday: false`, add `workday: true`
+- In tooltip: note the overtime explicitly, e.g., `04/25（周六加班）`
+- Only include when the user explicitly confirms overtime; do not assume it
 
 ---
 
@@ -104,7 +113,7 @@ Date calculation rules, standard phase durations, and leave handling for release
 | QA env testing | 5 workdays | After 联调② |
 | Pre-prod testing | 3 workdays | After QA env |
 | Product review | 2 workdays | Parallel with pre-prod |
-| Release | Milestone | Next Monday after pre-prod ends |
+| Release | Milestone | Confirm release date with user; any workday is acceptable |
 
 Adjust durations based on user-provided information when it differs from these defaults.
 
@@ -112,7 +121,7 @@ Adjust durations based on user-provided information when it differs from these d
 
 ## 7. Release Date Selection
 
-1. Identify the last completion date among: 预生产测试 end and 产品回归 end
-2. Find the next calendar Monday after that date
-3. If that Monday is a statutory holiday, advance to the following Monday
-4. Record as milestone: `{ label: "版本发布", milestone: "MM/DD", milestoneTooltip: "🎯 版本发布\n{date}（周一）" }`
+1. Confirm the release date with the user — any workday after 预生产/回归 ends is acceptable
+2. If no preference, suggest the next workday after 预生产 ends
+3. If the chosen date is a statutory holiday, advance to the next workday
+4. Record as milestone: `{ label: "版本发布", milestone: "MM/DD", milestoneTooltip: "🎯 版本发布\n{date}（{weekday}）" }`

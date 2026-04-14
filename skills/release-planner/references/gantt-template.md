@@ -25,6 +25,7 @@ Complete HTML template for `开发排期甘特图.html`. Copy the entire file an
   .header-cell.label-col { text-align: left; padding-left: 10px; position: sticky; left: 0; z-index: 3; background: #f0f1f6; }
   .header-cell.weekend { background: #e8e9f0; color: #aaa; }
   .header-cell.holiday { background: #fde8e8; color: #e05555; }
+  .header-cell.workday-makeup { background: #fef9ec; color: #b45309; }
   .header-cell.today { background: #e8f0fe; color: #1a56db; border-bottom: 2px solid #4f86f7; }
   .group-row { display: contents; }
   .group-cell { grid-column: 1 / -1; background: #f0f2fa; font-size: 12px; font-weight: 800; color: #3a3a5c; padding: 6px 12px; border-top: 2px solid #e4e5ec; letter-spacing: 0.8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
@@ -43,6 +44,7 @@ Complete HTML template for `开发排期甘特图.html`. Copy the entire file an
   .day-cell { min-height: 36px; border-right: 1px solid #f0f1f6; display: flex; align-items: center; justify-content: center; position: relative; background: #fff; }
   .day-cell.weekend { background: #fafafa; }
   .day-cell.holiday { background: #fff5f5; }
+  .day-cell.workday-makeup { background: #fffbeb; }
   .day-cell.today { background: rgba(79,134,247,0.05); }
   .day-cell.today.weekend { background: rgba(79,134,247,0.07); }
   .day-cell.today.holiday { background: rgba(79,134,247,0.06); }
@@ -51,6 +53,7 @@ Complete HTML template for `开发排期甘特图.html`. Copy the entire file an
   .bar-label { position: absolute; top: 50%; transform: translateY(-50%); left: 6px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.95); white-space: nowrap; pointer-events: none; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 10px); }
   .tooltip { position: fixed; background: rgba(26,26,46,0.92); color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 6px; pointer-events: none; white-space: nowrap; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); line-height: 1.6; }
   .bar-dev    { background: #4f86f7; }
+  .bar-wait   { background: #cbd5e1; color: #64748b; }
   .bar-leave  { background: #f87171; }
   .bar-joint  { background: #34c97e; }
   .bar-test   { background: #f6a623; }
@@ -87,6 +90,7 @@ Complete HTML template for `开发排期甘特图.html`. Copy the entire file an
 
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#4f86f7"></div>开发</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#cbd5e1;border:1px solid #94a3b8"></div>等待协议</div>
   <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>请假</div>
   <div class="legend-item"><div class="legend-dot" style="background:#34c97e"></div>联调</div>
   <div class="legend-item"><div class="legend-dot" style="background:#f6a623"></div>测试环境测试</div>
@@ -94,6 +98,7 @@ Complete HTML template for `开发排期甘特图.html`. Copy the entire file an
   <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div>产品回归</div>
   <div class="legend-item"><div class="legend-dot" style="background:#1a1a2e;transform:rotate(45deg);border-radius:2px"></div>里程碑</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fafafa;border:1px solid #ddd"></div>周末</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fffbeb;border:1px solid #fcd34d"></div>补班</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fff5f5;border:1px solid #fdd"></div>节假日</div>
 </div>
 
@@ -117,7 +122,7 @@ const ROWS = [
 ];
 
 // ── 渲染（不要修改以下内容）─────────────────────────────
-const isOff = d => d.dow === 0 || d.dow === 6 || d.holiday;
+const isOff = d => (d.dow === 0 || d.dow === 6 || d.holiday) && !d.workday;
 const todayDate = (() => {
   const now = new Date();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -133,7 +138,7 @@ gantt.appendChild(labelHeader);
 DAYS.forEach(d => {
   const c = document.createElement('div');
   const isToday = d.date === todayDate;
-  c.className = 'header-cell' + (isToday ? ' today' : '') + (d.holiday ? ' holiday' : (d.dow === 0 || d.dow === 6 ? ' weekend' : ''));
+  c.className = 'header-cell' + (isToday ? ' today' : '') + (d.holiday ? ' holiday' : isOff(d) ? ' weekend' : d.workday ? ' workday-makeup' : '');
   c.innerHTML = d.date + '<br><span style="font-weight:400;color:#aaa">' + ['日','一','二','三','四','五','六'][d.dow] + '</span>';
   gantt.appendChild(c);
 });
@@ -168,7 +173,7 @@ ROWS.forEach(row => {
   DAYS.forEach((d, di) => {
     const dc = document.createElement('div');
     const isToday = d.date === todayDate;
-    dc.className = 'day-cell' + (isToday ? ' today' : '') + (d.holiday ? ' holiday' : (d.dow === 0 || d.dow === 6 ? ' weekend' : ''));
+    dc.className = 'day-cell' + (isToday ? ' today' : '') + (d.holiday ? ' holiday' : isOff(d) ? ' weekend' : d.workday ? ' workday-makeup' : '');
     if (row.milestone && row.milestone === d.date) {
       dc.classList.add('milestone-cell');
       const diamond = document.createElement('div');
@@ -194,7 +199,7 @@ ROWS.forEach(row => {
           const ei = DAYS.findIndex(x => x.date === bar.end);
           if (si === -1 || ei === -1) return;
           if (di > si && di < ei) {
-            const colorMap = { 'bar-dev':'#4f86f7','bar-leave':'#f87171','bar-joint':'#34c97e','bar-test':'#f6a623','bar-pre':'#a855f7','bar-review':'#ec4899' };
+            const colorMap = { 'bar-dev':'#4f86f7','bar-wait':'#cbd5e1','bar-leave':'#f87171','bar-joint':'#34c97e','bar-test':'#f6a623','bar-pre':'#a855f7','bar-review':'#ec4899' };
             const bridge = document.createElement('div');
             bridge.className = 'bar-bridge';
             bridge.style.borderColor = colorMap[bar.cls] || '#aaa';
@@ -233,18 +238,18 @@ document.addEventListener('mousemove', e => {
 - `dow` values: `0`=Sun, `1`=Mon, `2`=Tue, `3`=Wed, `4`=Thu, `5`=Fri, `6`=Sat
 - `holiday: true` — statutory holidays only (days off by government decree)
 - Weekends (`dow` 0 or 6) are automatically styled gray by the renderer; do **not** set `holiday: true` for regular weekends
-- Substitute workdays (weekend makeup days): keep the correct `dow` value, set `holiday: false`
+- Substitute workdays / voluntary overtime days: keep the correct `dow` value, set `holiday: false`, and add `workday: true` — the renderer checks `&& !d.workday` so the day is treated as a normal workday; renders with yellow `.workday-makeup` background
 
 ### Example
 
 ```js
 const DAYS = [
-  { date: "03/10", dow: 1, holiday: false }, // Mon
-  { date: "03/11", dow: 2, holiday: false },
-  { date: "03/15", dow: 6, holiday: false }, // Sat — rendered gray automatically
-  { date: "03/16", dow: 0, holiday: false }, // Sun — rendered gray automatically
-  { date: "04/03", dow: 4, holiday: true  }, // Qingming — rendered red
-  { date: "04/07", dow: 1, holiday: false }, // Makeup workday (Mon) — treated as normal
+  { date: "03/10", dow: 1, holiday: false },                   // Mon — normal workday
+  { date: "03/15", dow: 6, holiday: false },                   // Sat — rendered gray automatically
+  { date: "03/16", dow: 0, holiday: false },                   // Sun — rendered gray automatically
+  { date: "04/03", dow: 4, holiday: true  },                   // Qingming — rendered red
+  { date: "04/26", dow: 6, holiday: false, workday: true },    // Makeup Saturday (govt-mandated 补班) — treated as workday, rendered yellow
+  { date: "04/25", dow: 5, holiday: false, workday: true },    // Voluntary overtime Friday (team-agreed) — same flag, rendered yellow
 ];
 ```
 
@@ -277,6 +282,7 @@ const DAYS = [
 | `cls` | Color | Use |
 |-------|-------|-----|
 | `bar-dev` | `#4f86f7` blue | Development |
+| `bar-wait` | `#cbd5e1` gray | Waiting for API protocol (frontend blocked) |
 | `bar-leave` | `#f87171` red | Personal leave (overlay on dev bar) |
 | `bar-joint` | `#34c97e` green | Joint debugging |
 | `bar-test` | `#f6a623` orange | QA environment testing |
