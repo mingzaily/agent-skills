@@ -92,12 +92,20 @@ Date calculation rules, standard phase durations, and leave handling for release
 - The day renders with a yellow `.workday-makeup` background
 - **Pairing rule**: when adding a statutory holiday block, check whether a government-announced substitute workday exists for that holiday and add it to DAYS as well
 
-### Voluntary Overtime Day / 主动加班 (team-agreed weekend work)
+### Voluntary Overtime Day / 主动加班 (team-agreed, confirmed)
 
 - Occurs when the team decides to work on a weekend to meet a deadline (e.g., QA overtime during test phase)
-- In DAYS: same treatment as substitute workday — keep the correct `dow`, set `holiday: false`, add `workday: true`
-- In tooltip: note the overtime explicitly, e.g., `04/25（周六加班）`
+- In DAYS: same treatment as substitute workday — keep the correct `dow`, add `workday: true`
+- Add `name: "周六加班"` to show in the header tooltip
 - Only include when the user explicitly confirms overtime; do not assume it
+
+### Overtime Pending Day / 加班待定 (unconfirmed)
+
+- When the user mentions potential overtime but has not confirmed it (e.g., "视测试进度确认 04/25 是否加班")
+- In DAYS: keep the correct `dow`, add `overtimePending: true` and `name: "预选加班位 (视测试进度确认)"`
+- Do **not** add `workday: true` — the day remains an off day for workday counting purposes
+- The renderer draws a `.bar-pending` dashed-border box (instead of a solid bar) for any bar that spans through this day, visually indicating the work is conditional
+- If the user later confirms the overtime, change `overtimePending: true` to `workday: true`
 
 ---
 

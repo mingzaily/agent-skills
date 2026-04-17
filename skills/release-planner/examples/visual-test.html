@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甘特图功能演示 - 视觉测试</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mingzaily/agent-skills@main/skills/release-planner/scripts/gantt.css">
+</head>
+<body>
+
+<h1>甘特图功能演示：多场景视觉测试</h1>
+<p class="subtitle">用于验证跨周末、加班待定、长假衔接等场景的视觉连贯性</p>
+
+<div class="info-bar">
+  <div><strong>测试重点</strong>04/25 加班待定衔接、05/01–05/05 长假虚线桥接、任务状态无缝切换</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="gantt-container" id="gantt-container">
+<div class="gantt" id="gantt"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot bar-dev"></div>开发</div>
+  <div class="legend-item"><div class="legend-dot bar-wait" style="border:1px solid #94a3b8"></div>等待协议</div>
+  <div class="legend-item"><div class="legend-dot bar-leave"></div>请假</div>
+  <div class="legend-item"><div class="legend-dot bar-joint"></div>联调</div>
+  <div class="legend-item"><div class="legend-dot bar-test"></div>测试</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a1a2e; transform:rotate(45deg); border-radius:2px;"></div>里程碑</div>
+</div>
+
+<script>
+// Fictional dates designed to exercise all rendering edge cases
+const DAYS = [
+  { date: "04/14", dow: 2 }, { date: "04/15", dow: 3 }, { date: "04/16", dow: 4 }, { date: "04/17", dow: 5 },
+  { date: "04/18", dow: 6 }, { date: "04/19", dow: 0 }, { date: "04/20", dow: 1 }, { date: "04/21", dow: 2 },
+  { date: "04/22", dow: 3 }, { date: "04/23", dow: 4 }, { date: "04/24", dow: 5 },
+  { date: "04/25", dow: 6, overtimePending: true, name: "Overtime pending (to be confirmed)" },
+  { date: "04/26", dow: 0 }, { date: "04/27", dow: 1 },
+  { date: "04/28", dow: 2 }, { date: "04/29", dow: 3 }, { date: "04/30", dow: 4 },
+  { date: "05/01", dow: 5, holiday: true, name: "National Holiday" },
+  { date: "05/02", dow: 6, holiday: true, name: "National Holiday" },
+  { date: "05/03", dow: 0, holiday: true, name: "National Holiday" },
+  { date: "05/04", dow: 1, holiday: true, name: "National Holiday" },
+  { date: "05/05", dow: 2, holiday: true, name: "National Holiday" },
+  { date: "05/06", dow: 3 }, { date: "05/07", dow: 4 },
+  { date: "05/08", dow: 5 },
+  { date: "05/09", dow: 6, workday: true, name: "Makeup workday (for 05/05)" },
+  { date: "05/10", dow: 0 }
+];
+
+const ROWS = [
+  // ── Scenario 1: Overtime pending day bridging ──
+  { group: "Scenario 1: Overtime Pending (04/25)", cls: "" },
+  { label: "Case_A", bars: [
+    { label: "dev", cls: "bar-dev", start: "04/23", end: "04/27",
+      tooltip: "Spans overtime-pending day<br>Solid segments + dashed box should connect seamlessly" }
+  ]},
+  { label: "Case_B", bars: [
+    { label: "dev", cls: "bar-dev", start: "04/24", end: "04/24",
+      tooltip: "Ends Friday<br>Should have right border-radius" },
+    { label: "debug", cls: "bar-joint", start: "04/27", end: "04/28",
+      tooltip: "Starts Monday<br>Should have left border-radius" }
+  ]},
+
+  // ── Scenario 2: Long holiday bridging ──
+  { group: "Scenario 2: Long Holiday Bridge (05/01–05/05)", cls: "orange" },
+  { label: "Case_C", bars: [
+    { label: "long task", cls: "bar-dev", start: "04/28", end: "05/08",
+      tooltip: "Spans 5-day holiday<br>Dashed bridge should trace the full gap" }
+  ]},
+  { label: "Case_D", bars: [
+    { label: "pre-holiday", cls: "bar-dev", start: "04/28", end: "04/30",
+      tooltip: "Ends before holiday" },
+    { label: "post-holiday", cls: "bar-joint", start: "05/06", end: "05/07",
+      tooltip: "Starts after holiday" }
+  ]},
+
+  // ── Scenario 3: Seamless status transitions ──
+  { group: "Scenario 3: Status Transitions", cls: "green" },
+  { label: "Case_E", bars: [
+    { label: "dev", cls: "bar-dev", start: "04/14", end: "04/15",
+      tooltip: "Task A: ends 04/15" },
+    { label: "leave", cls: "bar-leave", start: "04/16", end: "04/17",
+      tooltip: "Task B: starts 04/16<br>Adjacent but separate — should have gap" }
+  ]},
+  { label: "Case_F", bars: [
+    { label: "dev", cls: "bar-dev", start: "04/14", end: "04/21",
+      tooltip: "Single bar spanning weekend<br>Segments should connect seamlessly across 04/18–04/19" }
+  ]},
+  { label: "Case_G", bars: [
+    { label: "wait", cls: "bar-wait", start: "04/14", end: "04/14",
+      tooltip: "Wait for API protocol" },
+    { label: "dev", cls: "bar-dev", start: "04/15", end: "04/17",
+      tooltip: "Dev starts after protocol ready" }
+  ]},
+
+  // ── Scenario 4: Edge cases ──
+  { group: "Scenario 4: Extreme Edge Cases", cls: "gray" },
+  { label: "Case_H", bars: [
+    { label: "Fri→Mon", cls: "bar-dev", start: "04/17", end: "04/20",
+      tooltip: "Spans normal weekend<br>Two segments connected by dashed bridge" }
+  ]},
+  { label: "Case_I", bars: [
+    { label: "makeup", cls: "bar-test", start: "05/08", end: "05/09",
+      tooltip: "Spans into makeup workday (05/09 Sat)<br>05/09 should render as workday, yellow column" }
+  ]},
+  { label: "Milestone A", milestone: "04/25", milestoneTooltip: "Milestone on overtime-pending day" },
+  { label: "Milestone B", milestone: "05/01", milestoneTooltip: "Milestone on holiday start" },
+];
+</script>
+<script src="https://cdn.jsdelivr.net/gh/mingzaily/agent-skills@main/skills/release-planner/scripts/gantt.js"></script>
+</body>
+</html>

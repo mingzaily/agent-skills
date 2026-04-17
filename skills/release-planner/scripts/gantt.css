@@ -1,0 +1,225 @@
+/*
+ * Gantt Chart Styles — release-planner skill
+ * https://github.com/mingzaily/agent-skills
+ *
+ * Usage:
+ *   CDN:    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mingzaily/agent-skills@main/skills/release-planner/scripts/gantt.css">
+ *   Inline: Copy contents into <style> tag
+ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  background: #f5f6fa;
+  color: #333;
+  padding: 32px;
+}
+
+/* ── Header info ──────────────────────────────────────── */
+h1 { font-size: 20px; font-weight: 600; margin-bottom: 6px; color: #1a1a2e; }
+.subtitle { font-size: 13px; color: #888; margin-bottom: 16px; }
+.info-bar { display: flex; gap: 24px; font-size: 12px; margin-bottom: 24px; color: #777; flex-wrap: wrap; }
+.info-bar strong { color: #333; margin-right: 4px; }
+.info-bar .hl-red { color: #f87171; font-weight: 600; }
+.info-bar .hl-orange { color: #b45309; }
+
+/* ── Container ────────────────────────────────────────── */
+.gantt-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: auto;
+  padding: 24px;
+  max-height: 80vh;
+}
+.gantt { display: grid; min-width: 900px; position: relative; }
+
+/* ── Header cells ─────────────────────────────────────── */
+.header-cell {
+  background: #f0f1f6;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  padding: 6px 2px;
+  border-right: 1px solid #e4e5ec;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-cell.label-col {
+  text-align: left;
+  padding-left: 12px;
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background: #f0f1f6;
+}
+.header-cell.weekend { background: #e8e9f0; color: #aaa; }
+.header-cell.holiday { background: #fde8e8; color: #e05555; }
+.header-cell.workday-makeup { background: #fef9ec; color: #b45309; }
+.header-cell.today { background: #e8f0fe; color: #1a56db; border-bottom: 2px solid #4f86f7; }
+
+/* ── Group rows ───────────────────────────────────────── */
+.group-cell {
+  grid-column: 1 / -1;
+  background: #f0f2fa;
+  font-size: 12px;
+  font-weight: 800;
+  color: #3a3a5c;
+  padding: 8px 12px;
+  border-top: 2px solid #e4e5ec;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  z-index: 5;
+}
+.group-cell::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: #4f86f7;
+}
+.group-cell.green::before { background: #34c97e; }
+.group-cell.orange::before { background: #f6a623; }
+.group-cell.gray::before { background: #94a3b8; }
+
+/* ── Label cells ──────────────────────────────────────── */
+.label-cell {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  border-right: 2px solid #e4e5ec;
+  white-space: nowrap;
+}
+.label-cell code {
+  background: #eef0fa;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-family: "SF Mono", Menlo, monospace;
+  color: #4a5568;
+}
+
+/* ── Day cells ────────────────────────────────────────── */
+.day-cell {
+  min-height: 36px;
+  border-right: 1px solid #f0f1f6;
+  border-bottom: 1px solid #f0f1f6;
+  position: relative;
+  background: #fff;
+}
+.day-cell.weekend { background: #fafafa; }
+.day-cell.holiday { background: #fff5f5; }
+.day-cell.workday-makeup { background: #fffbeb; }
+
+/* ── Row hover ────────────────────────────────────────── */
+.row-hover .label-cell, .row-hover .day-cell { background: #f0f7ff !important; }
+
+/* ── Bars ─────────────────────────────────────────────── */
+.bar {
+  position: absolute;
+  height: 18px;
+  top: 50%;
+  margin-top: -9px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 3;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  cursor: default;
+}
+.bar-label {
+  white-space: nowrap;
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Bridge (dashed line on off days) ─────────────────── */
+.bar-bridge {
+  position: absolute;
+  height: 0;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed;
+  opacity: 0.4;
+  z-index: 1;
+}
+
+/* ── Pending overtime (dashed box) ────────────────────── */
+.bar-pending {
+  position: absolute;
+  height: 18px;
+  top: 50%;
+  margin-top: -9px;
+  left: 2px;
+  right: 2px;
+  border: 2px dashed;
+  border-radius: 4px;
+  background: transparent;
+  opacity: 0.6;
+  z-index: 2;
+}
+
+/* ── Bar colors ───────────────────────────────────────── */
+.bar-dev { background: #4f86f7; }
+.bar-wait { background: #cbd5e1; color: #64748b; }
+.bar-leave { background: #f87171; }
+.bar-joint { background: #34c97e; }
+.bar-test { background: #f6a623; }
+.bar-pre { background: #a855f7; }
+.bar-review { background: #ec4899; }
+
+/* ── Tooltip ──────────────────────────────────────────── */
+.tooltip {
+  position: fixed;
+  background: rgba(26, 26, 46, 0.95);
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  line-height: 1.6;
+}
+
+/* ── Milestone ────────────────────────────────────────── */
+.milestone-diamond {
+  width: 14px;
+  height: 14px;
+  background: #1a1a2e;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  margin: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* ── Legend ────────────────────────────────────────────── */
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 20px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+/* ── Note ─────────────────────────────────────────────── */
+.note { font-size: 12px; color: #888; margin-top: 16px; line-height: 1.7; }
+.note strong { color: #f87171; }

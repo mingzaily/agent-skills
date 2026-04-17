@@ -1,6 +1,13 @@
-# Agent Instructions
+# Project Instructions
 
 This repository contains reusable AI agent skills following the [skills.sh](https://skills.sh) standard.
+
+## Installation
+
+```bash
+npx skills add mingzaily/agent-skills
+npx skills add mingzaily/agent-skills/release-planner
+```
 
 ## Repository Layout
 
@@ -20,14 +27,11 @@ agent-skills/
 
 ### SKILL.md Frontmatter
 
-Every skill must have a `SKILL.md` with valid YAML frontmatter:
-
 ```yaml
 ---
-name: skill-name
-description: >
-  This skill should be used when the user asks to "specific phrase 1",
-  "specific phrase 2", or provides <data type> for <task>.
+name: skill-name # required, lowercase + hyphens
+description: > # required, third-person with concrete trigger phrases
+  This skill should be used when the user asks to "..."
 license: MIT
 metadata:
   author: mingzaily
@@ -35,25 +39,27 @@ metadata:
 ---
 ```
 
-- `name`: lowercase, hyphens only
-- `description`: third-person, include concrete trigger phrases users would say
-- All four fields (`name`, `description`, `license`, `metadata`) are required
-
 ### Writing Style
 
-- Use **imperative/infinitive form** throughout the body (verb-first, e.g. "Extract the version number")
-- Never use second person ("you should", "you need to", "你应该")
+- Use **imperative/infinitive form** throughout the body (verb-first instructions)
+- Never use second person ("you should", "you need to")
 - Keep SKILL.md body under 2000 words; move detail to `references/`
+- End with `## Additional Resources` listing all referenced files
 
-### Data Policy
+### Directory Responsibilities
 
-- `examples/` must contain **fictional data only** — no real names, real versions, or real business information
-- `references/` may contain real templates and schemas, but no personally identifiable project data
+| Directory     | Purpose                             | Loaded               |
+| ------------- | ----------------------------------- | -------------------- |
+| `SKILL.md`    | Core concepts and workflow          | When skill triggers  |
+| `references/` | Detailed specs, API docs, templates | On demand by agent   |
+| `examples/`   | Complete, runnable examples         | Referenced as needed |
+| `scripts/`    | Utility scripts (Python/Bash)       | On execution         |
 
-### Adding a New Skill
+### Checklist for New Skills
 
-1. Create `skills/<name>/SKILL.md` with required frontmatter
-2. Add `references/` for detailed specs and templates
-3. Add `examples/` with fictional-data demos
-4. Update root `README.md` skill table
-5. Verify all trigger phrases in `description` are specific and actionable
+- [ ] `SKILL.md` has `name`, `description`, `license`, `metadata`
+- [ ] `description` uses third person with specific trigger phrases
+- [ ] Body uses imperative form, no second-person language
+- [ ] `SKILL.md` is lean; detail lives in `references/`
+- [ ] `examples/` contains fictional data only — no real names or business data
+- [ ] `## Additional Resources` in `SKILL.md` lists all dependency files
